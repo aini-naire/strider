@@ -29,7 +29,8 @@ class DatabaseHandler():
                 raise ValueError
             
             
-    def _getArchiveKey(self, datetime: datetime, timestamp: int):
+    def _getArchiveKey(self, datetime: datetime):
+        timestamp = int(datetime.timestamp())
         return timestamp - (timestamp % self._getArchivePeriod(datetime))
     
 
@@ -57,8 +58,7 @@ class DatabaseHandler():
     
     
     def hasArchivePeriod(self, datetime):
-        timestamp = int(datetime.timestamp())
-        return self.hasArchive(self._getArchiveKey(datetime, timestamp))
+        return self.hasArchive(self._getArchiveKey(datetime))
     
     
     def loadArchive(self, archiveKey):
@@ -81,8 +81,7 @@ class DatabaseHandler():
     def createArchive(self, datetime: datetime) -> ArchiveHandler:
         """Depending on the archive range, archives are created starting on the first hour of the day or week and cannot overlap unless the resolution is different
         TODO checks, errors"""
-        timestamp = int(datetime.timestamp())
-        archiveMin = self._getArchiveKey(datetime, timestamp)
+        archiveMin = self._getArchiveKey(datetime)
         archiveMax = archiveMin + self._getArchivePeriod(datetime)
         
         databaseArchive = DatabaseArchive(archiveMin, archiveMax, self.database.archiveCount+1, 0)

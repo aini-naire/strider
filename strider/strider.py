@@ -7,11 +7,12 @@ from datetime import datetime
 import math
 
 CURRENT_REVISION = 0
-
-from strider.datatypes import StriderStruct, Database, DatabaseArchive, ArchiveFile, ArchiveKey, ArchiveIndex, ARCHIVE_RANGE
 from strider.io import StriderFileIO, StriderFileUtil
 from strider.database import DatabaseHandler
+from strider.archive import ArchiveHandler
 from strider.exceptions import *
+
+from strider.datatypes import StriderStruct, Database, DatabaseArchive, ArchiveFile, ArchiveKey, ArchiveIndex, ARCHIVE_RANGE
 
 
 class DatabaseManager():
@@ -52,15 +53,14 @@ class DatabaseSession():
     fileUtil: StriderFileUtil
     loadedArchives: dict = {}
 
-    def __init__(self, handler: DatabaseHandler, fileUtil) -> None:
+    def __init__(self, handler: DatabaseHandler, fileUtil: StriderFileUtil) -> None:
         self.databaseHandler = handler
         self.fileUtil = fileUtil
         self.loadedArchives = handler.loadArchives()
         
             
-    def _getArchiveForDate(self, datetime: datetime):
-        timestamp = int(datetime.timestamp())
-        archiveKey = self.databaseHandler._getArchiveKey(datetime, timestamp)
+    def _getArchiveForDate(self, datetime: datetime) -> Union[None | ArchiveHandler]:
+        archiveKey = self.databaseHandler._getArchiveKey(datetime)
 
         if archiveKey in self.loadedArchives:
             return self.loadedArchives[archiveKey]
@@ -72,14 +72,14 @@ class DatabaseSession():
         
         return None
 
-    def _getOrCreateArchive(self, time):
-        archive = self._getArchiveForDate(time)
+    def _getOrCreateArchive(self, datetime: datetime) -> ArchiveHandler:
+        archive = self._getArchiveForDate(datetime)
         if archive is None:
-            archive = self.databaseHandler.createArchive(time)
+            archive = self.databaseHandler.createArchive(datetime)
         return archive
     
 
-    def query(self, start: datetime, end: datetime, keys: list[str]):
+    def query(self, start: datetime, end: datetime, keys: list[str]) -> list:
         results = []
         startTimestamp = int(start.timestamp())
         endTimestamp = int(end.timestamp())
@@ -95,14 +95,14 @@ class DatabaseSession():
         return results
 
 
-    def add(self, time: datetime, data: dict):
-        """Adds an entry to the database. Note this can only add data to the current archive at a timestamp after the last entry"""
+    def add(self, time: datetime, data: dict) -> None:
+        """Adds an entry to the database."""
         archive = self._getOrCreateArchive(time)
         
         archive.writeRecords([(int(time.timestamp, **data.values()))])
 
 
-    def bulkAdd(self, ingest: dict):
+    def bulkAdd(self, ingest: dict) -> None:
         """Add data to Database in bulk. 
         This function ingests data as a dictionary `datetime:{key:value}`
         keys already must exist in the database
@@ -110,21 +110,19 @@ class DatabaseSession():
         TODO check if archive contains key"""
         time:datetime = next(iter(ingest))
         archive = self._getOrCreateArchive(time)
-        timestamp = int(time.timestamp())
-        archiveKey = self.databaseHandler._getArchiveKey(time, timestamp)
+        archiveKey = self.databaseHandler._getArchiveKey(time)
         recordsQueue = []
         dataDict:dict
 
         for time, dataDict in ingest.items():
-            timestamp = int(time.timestamp())
-            iterationArchiveKey = self.databaseHandler._getArchiveKey(time, timestamp)
+            iterationArchiveKey = self.databaseHandler._getArchiveKey(time)
 
             if iterationArchiveKey != archiveKey:
                 archive.writeRecords(recordsQueue)
                 recordsQueue = []
                 archive = self._getOrCreateArchive(time)
                 archiveKey = iterationArchiveKey
-            recordsQueue.append((timestamp, *dataDict.values()))
+            recordsQueue.append((int(time.timestamp()), *dataDict.values()))
         
         archive.writeRecords(recordsQueue)
             
