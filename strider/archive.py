@@ -1,4 +1,5 @@
 from strider.io import StriderFileIO, StriderFileUtil, StriderArchiveIO
+from strider.exceptions import *
 
 
 from strider.strider import CURRENT_REVISION
@@ -81,8 +82,7 @@ class ArchiveHandler():
         with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "rb"), self.archiveRecordFormat) as archiveFile:
             if index:
                 archiveFile.file.seek(index.offset)
-            #note that reading one at a time is way slower especially calling a wrapper function
-            #print(start, index, self.archive.indexInteval,)
+                
             lookAhead = True
             read = True
             while read:
@@ -115,7 +115,7 @@ class ArchiveHandler():
             self.lastEntryTimestamp = archiveFile.readRecord()[0] if lastRecord else 0
             for record in records:
                 if record[0] < self.lastEntryTimestamp:
-                    print("tried to add a record before the last")
+                    raise SequenceViolation
                     break
 
                 if record[0] - self.lastIndexTimestamp > self.archive.indexInteval:

@@ -11,6 +11,7 @@ CURRENT_REVISION = 0
 from strider.datatypes import StriderStruct, Database, DatabaseArchive, ArchiveFile, ArchiveKey, ArchiveIndex, ARCHIVE_RANGE
 from strider.io import StriderFileIO, StriderFileUtil
 from strider.database import DatabaseHandler
+from strider.exceptions import *
 
 
 class DatabaseManager():
@@ -19,7 +20,10 @@ class DatabaseManager():
         """Loads Strider database
         TODO integrity checks and errors"""
         fileUtil = StriderFileUtil(baseDir, name)
-        databaseFile = StriderFileIO(open(fileUtil.getDatabaseFilepath(), "rb"))
+        try:
+            databaseFile = StriderFileIO(open(fileUtil.getDatabaseFilepath(), "rb"))
+        except FileNotFoundError:
+            raise DatabaseNotFound
 
         database: Database = databaseFile.readStruct(Database)
         database.archives = databaseFile.readStructSequence(DatabaseArchive, database.archiveCount)
@@ -32,7 +36,7 @@ class DatabaseManager():
         """Creates new Strider database"""
         fileUtil = StriderFileUtil(baseDir, name)
         if os.path.isdir(fileUtil.databaseDirectory):
-            print("directory exists")
+            raise DatabaseExists
         else:
             database = Database("strdrdb", CURRENT_REVISION, name, 0, 0, 3600, range, [], [])
             
@@ -106,8 +110,6 @@ class DatabaseSession():
         TODO check if archive contains key"""
         time:datetime = next(iter(ingest))
         archive = self._getOrCreateArchive(time)
-        print(archive.__dict__)
-        print(time)
         timestamp = int(time.timestamp())
         archiveKey = self.databaseHandler._getArchiveKey(time, timestamp)
         recordsQueue = []
@@ -116,10 +118,8 @@ class DatabaseSession():
         for time, dataDict in ingest.items():
             timestamp = int(time.timestamp())
             iterationArchiveKey = self.databaseHandler._getArchiveKey(time, timestamp)
-            #print(archiveKey, iterationArchiveKey, time)
 
             if iterationArchiveKey != archiveKey:
-                print("diff", iterationArchiveKey)
                 archive.writeRecords(recordsQueue)
                 recordsQueue = []
                 archive = self._getOrCreateArchive(time)
