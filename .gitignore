@@ -164,3 +164,4 @@ cython_debug/
 test/
 data/
 /*.py
+/.idea
