@@ -51,6 +51,7 @@ class DatabaseSession():
     def __init__(self, handler: DatabaseHandler, fileUtil) -> None:
         self.databaseHandler = handler
         self.fileUtil = fileUtil
+        self.loadedArchives = handler.loadArchives()
         
             
     def _getArchiveForDate(self, datetime: datetime):

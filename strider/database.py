@@ -69,6 +69,13 @@ class DatabaseHandler():
                 databaseArchive = archive
         archiveHandler = ArchiveHandler(self.fileUtil).load(databaseArchive)
         return archiveHandler
+    
+    def loadArchives(self):
+        archives = {}
+        for archive in self.database.archives:
+            archiveHandler = ArchiveHandler(self.fileUtil).load(archive)
+            archives[archive.minRange] = archiveHandler
+        return archives
 
 
     def createArchive(self, datetime: datetime) -> ArchiveHandler:
