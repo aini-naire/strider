@@ -62,9 +62,11 @@ class ArchiveHandler():
 
     def getIndex(self, time):
         index:ArchiveIndex
+        last = None
         for index in self.archive.indices:
-            if index.timestamp < time:
-                return index
+            if index.timestamp > time:
+                return last
+            last = index
     
     def addIndex(self, index: ArchiveIndex):
         """TODO somthing"""
@@ -77,7 +79,8 @@ class ArchiveHandler():
         records = []
         index = self.getIndex(start)
         with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "rb"), self.archiveRecordFormat) as archiveFile:
-            archiveFile.file.seek(index.offset)
+            if index:
+                archiveFile.file.seek(index.offset)
             #note that reading one at a time is way slower especially calling a wrapper function
             while True:
                 record = archiveFile.readRecord()
