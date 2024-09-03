@@ -27,7 +27,7 @@ class DatabaseHandler:
                 monthDays = calendar.monthrange(date.year, date.month)[1]
                 return 86400 * monthDays
             case _:
-                raise ValueError
+                raise ValueError()
 
     def getArchiveKey(self, date: datetime) -> int:
         timestamp = int(date.timestamp())

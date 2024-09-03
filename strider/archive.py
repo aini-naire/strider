@@ -29,7 +29,7 @@ class ArchiveHandler:
             self._buildDataFormat()
             self.lastIndexTimestamp = self.archive.indices[-1].timestamp
         except FileNotFoundError:
-            raise ArchiveNotFound
+            raise ArchiveNotFound()
 
         return self
 
@@ -134,7 +134,7 @@ class ArchiveHandler:
 
             for record in records:
                 if record[0] < self.lastEntryTimestamp:
-                    raise SequenceViolation
+                    raise SequenceViolation()
 
                 if (record[0] - self.lastIndexTimestamp) > self.archive.indexInterval:
                     index = ArchiveIndex(record[0], archiveFile.file.tell(), 1)

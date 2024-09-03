@@ -110,7 +110,7 @@ class DatabaseManager:
         try:
             databaseFile = StriderFileIO(open(fileUtil.getDatabaseFilepath(), "rb"))
         except FileNotFoundError:
-            raise DatabaseNotFound
+            raise DatabaseNotFound()
 
         database: Database = databaseFile.readStruct(Database)
         database.archives = databaseFile.readStructSequence(DatabaseArchive, database.archiveCount)
@@ -122,7 +122,7 @@ class DatabaseManager:
         """Creates new Strider database"""
         fileUtil = StriderFileUtil(baseDir, name)
         if os.path.isdir(fileUtil.databaseDirectory):
-            raise DatabaseExists
+            raise DatabaseExists()
         else:
             database = Database("strdrdb", CURRENT_REVISION, name, 0, 0, 3600, archiveRange, [], [])
 
