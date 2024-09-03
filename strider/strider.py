@@ -69,18 +69,20 @@ class DatabaseSession:
         time: datetime = next(iter(ingest))
         archive = self._getOrCreateArchive(time)
         archiveKey = self.databaseHandler.getArchiveKey(time)
+        archivePeriod = self.databaseHandler.getArchivePeriod(time)
         recordsQueue = []
         dataDict: dict
 
         for time, dataDict in ingest.items():
-            iterationArchiveKey = self.databaseHandler.getArchiveKey(time)
+            timestamp = int(time.timestamp())
+            #iterationArchiveKey = self.databaseHandler.getArchiveKey(time)
 
-            if iterationArchiveKey != archiveKey:
+            if (timestamp > archiveKey+archivePeriod):
                 archive.writeRecords(recordsQueue)
                 recordsQueue = []
                 archive = self._getOrCreateArchive(time)
-                archiveKey = iterationArchiveKey
-            recordsQueue.append((int(time.timestamp()), *dataDict.values()))
+                archiveKey = self.databaseHandler.getArchiveKey(time)
+            recordsQueue.append((timestamp, *dataDict.values()))
 
         archive.writeRecords(recordsQueue)
 

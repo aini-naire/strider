@@ -91,6 +91,10 @@ class StriderArchiveIO(StriderFileIO):
     def writeRecord(self, record: tuple) -> None:
         self.file.write(struct.pack(self.recordFormat, *record))
 
+        
+    def writeRecords(self, records: tuple) -> None:
+        self.file.write(struct.pack(self.recordFormat*len(records), *[recordItem for record in records for recordItem in record]))
+
 
 class StriderFileUtil:
     def __init__(self, baseDir: str, databaseName: str) -> None:

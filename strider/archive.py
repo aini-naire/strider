@@ -125,6 +125,6 @@ class ArchiveHandler:
                     self.addIndex(index)
                     self.lastIndexTimestamp = index.timestamp
 
-                archiveFile.writeRecord(record)
+            archiveFile.writeRecords(records)
 
             self.saveArchiveIndex()
