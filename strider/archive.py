@@ -1,4 +1,6 @@
 from typing import Union, Self
+from collections import namedtuple
+
 from strider.io import StriderFileIO, StriderFileUtil, StriderArchiveIO
 from strider.exceptions import *
 
@@ -91,10 +93,18 @@ class ArchiveHandler:
         self.saveArchiveIndex()
 
 
-    def readRecords(self, start: int, end: int) -> list:
+    def readRecords(self, start: int, end: int, key: Union[None | str] = None, raw: bool = False) -> list:
         """
         TODO smarter read strategy"""
-        records = []
+        if key:
+            records = {}
+            for i, archivekey in enumerate(self.archive.keys):
+                if archivekey.name == key:
+                    keyI = i+1
+        else:
+            records = []
+            recordTuple = namedtuple('Record', 'timestamp '+' '.join([key.name for key in self.archive.keys]))
+        
         index = self.getIndex(start)
         with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "rb"), self.archiveRecordFormat) as archiveFile:
             if index:
@@ -107,24 +117,26 @@ class ArchiveHandler:
                     nextRecords = archiveFile.readRecords(50)
                     if nextRecords is None:
                         lookAhead = False
-                        continue
-                    for r in nextRecords:
-                        if r[0] >= start:
-                            if r[0] >= end:
-                                read = False
-                            else:
-                                records.append(r)
-                else:
-                    record = archiveFile.readRecord()
-                    if record is None:
+
+                if nextRecords is None:
+                    nextRecords = [archiveFile.readRecord()]
+                    if nextRecords[0] is None:
                         break
 
+                for record in nextRecords:
                     if record[0] >= start:
                         if record[0] >= end:
-                            break
+                            read = False
+                        else:
+                            if key:
+                                records[record[0]] = record[keyI]
+                            else:
+                                records.append(record)
 
-                        records.append(record)
-        return records
+            if raw or key:
+                return records
+            else:
+                return [tuple.__new__(recordTuple, record) for record in records]
 
     def writeRecords(self, records: list) -> None:
         with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "a+b"), self.archiveRecordFormat) as archiveFile:

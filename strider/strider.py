@@ -45,7 +45,8 @@ class DatabaseSession:
         date = datetime.now()
         return self._getArchiveForDate(date)
 
-    def query(self, start: datetime, end: datetime, keys: list[str]) -> list:
+    def query(self, start: datetime, end: datetime, key: Union[None | str] = None, raw: bool = False, asArrays:bool = False) -> Union[list | dict]:
+        """Queries from start to end date. If `key` is set, returns a single key in `{timestamp:keyvalue}` format. If `raw` is set, returns records as tuples"""
         results = []
         startTimestamp = int(start.timestamp())
         endTimestamp = int(end.timestamp())
@@ -54,8 +55,10 @@ class DatabaseSession:
 
         for archiveI in range(archiveCount):
             archive = self._getArchiveForDate(datetime.fromtimestamp(startTimestamp + (archiveI * archivePeriod)))
-            results += archive.readRecords(startTimestamp, endTimestamp)
+            results += archive.readRecords(startTimestamp, endTimestamp, key, raw if not asArrays else True)
 
+        if asArrays:
+            return {keyName: [record[recordIndex] for record in results] for recordIndex, keyName in enumerate([key.name for key in archive.archive.keys])}
         return results
 
     def add(self, time: datetime, data: dict) -> None:

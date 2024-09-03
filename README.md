@@ -12,7 +12,7 @@ Strider is a simple timeseries database written in Python.
  - [ ] downsampling
  - [ ] compression(?)
  - [ ] memory residency mode (all archives, current, none)
- - [ ] query return formats
+ - [x] query return formats
  - [ ] database creation options
 # Usage
 
