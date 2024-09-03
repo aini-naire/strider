@@ -19,3 +19,7 @@ class ArchiveNotFound(Exception):
 # Operations
 class SequenceViolation(Exception):
     pass
+
+
+class KeyAlreadyExists(Exception):
+    pass

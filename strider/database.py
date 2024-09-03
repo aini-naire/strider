@@ -4,6 +4,7 @@ import calendar
 
 from strider.io import StriderFileIO, StriderFileUtil
 from strider.archive import ArchiveHandler
+from strider.exceptions import *
 
 from strider.datatypes import Database, DatabaseArchive, ArchiveKey, ARCHIVE_RANGE, ARCHIVE_KEY_TYPES
 
@@ -38,13 +39,16 @@ class DatabaseHandler:
         with StriderFileIO(open(self.fileUtil.getDatabaseFilepath(), "wb")) as databaseFile:
             databaseFile.writeStruct(self.database)
 
-    def addKey(self, keyName: str, keyType: str):
-        """Correctly adds an key to the database file
-        TODO checks, archive rebuilding"""
-        archiveKey = ArchiveKey(keyName, ARCHIVE_KEY_TYPES(keyType))
+    def addKey(self, archiveKey: ArchiveKey) -> bool:
+        """Correctly adds an key to the database file"""
+        for key in self.database.keys:
+            if key.name == archiveKey.name:
+                raise KeyAlreadyExists()
+            
         self.database.keys.append(archiveKey)
         self.database.keyCount = len(self.database.keys)
         self.save()
+        return True
 
     def hasArchive(self, archiveKey: int) -> bool:
         for archive in self.database.archives:

@@ -9,7 +9,7 @@ from strider.database import DatabaseHandler
 from strider.archive import ArchiveHandler
 from strider.exceptions import *
 
-from strider.datatypes import Database, DatabaseArchive, ArchiveKey, ARCHIVE_RANGE
+from strider.datatypes import Database, DatabaseArchive, ArchiveKey, ARCHIVE_RANGE, ARCHIVE_KEY_TYPES
 
 class DatabaseSession:
     """"""
@@ -40,6 +40,10 @@ class DatabaseSession:
         if archive is None:
             archive = self.databaseHandler.createArchive(date)
         return archive
+    
+    def _getActiveArchive(self) -> Union[None | ArchiveHandler]:
+        date = datetime.now()
+        return self._getArchiveForDate(date)
 
     def query(self, start: datetime, end: datetime, keys: list[str]) -> list:
         results = []
@@ -59,6 +63,16 @@ class DatabaseSession:
         archive = self._getOrCreateArchive(time)
 
         archive.writeRecords([(int(time.timestamp()), *data.values())])
+
+    def addKey(self, keyName: str, keyType: str) -> None:
+        """"Adds keyName to the database keys. This operation only affects current and future archives since the database does not have update operations (yet?)"""
+        archiveKey = ArchiveKey(keyName, ARCHIVE_KEY_TYPES(keyType))
+        self.databaseHandler.addKey(archiveKey)
+        
+        activeArchive = self._getActiveArchive()
+        if activeArchive:
+            activeArchive.addKey(archiveKey)
+
 
     def bulkAdd(self, ingest: dict) -> None:
         """Add data to Database in bulk. 

@@ -75,6 +75,22 @@ class ArchiveHandler:
         self.archive.indices.append(index)
         self.archive.indexCount = len(self.archive.indices)
 
+    def addKey(self, archiveKey: ArchiveKey) -> None:
+        with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "rb"), self.archiveRecordFormat) as archiveFile:
+            records = archiveFile.readAllRecords()
+
+        with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True)+".new", "w+b"), self.archiveRecordFormat) as archiveFile:
+            archiveFile.setRecordFormat(self.archiveRecordFormat+ARCHIVE_KEY_TYPES(archiveKey.type).name)
+            records = [(*item, 0) for item in records]
+            archiveFile.writeRecords(records)
+
+        self.fileUtil.replaceArchive(self.archive, True)
+
+        self.archive.keys.append(archiveKey)
+        self.archive.keyCount = len(self.archive.keys)
+        self.saveArchiveIndex()
+
+
     def readRecords(self, start: int, end: int) -> list:
         """
         TODO smarter read strategy"""

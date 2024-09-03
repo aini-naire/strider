@@ -2,6 +2,7 @@ from io import BufferedIOBase
 import struct
 import dataclasses
 import os
+import shutil
 from typing import Union, Type
 
 from strider.datatypes import StriderStruct, ArchiveFile, DatabaseArchive
@@ -73,8 +74,11 @@ class StriderArchiveIO(StriderFileIO):
     def __init__(self, file, recordFormat) -> None:
         super().__init__(file)
         self.file: BufferedIOBase = file
-        self.recordFormat = recordFormat
-        self.recordSize = struct.calcsize(recordFormat)
+        self.setRecordFormat(recordFormat)
+    
+    def setRecordFormat(self, newFormat: str) -> None:
+        self.recordFormat = newFormat
+        self.recordSize = struct.calcsize(newFormat)
 
     def readRecord(self) -> tuple:
         recordBytes = self.file.read(self.recordSize)
@@ -87,6 +91,11 @@ class StriderArchiveIO(StriderFileIO):
         if recordBytes:
             return tuple(struct.iter_unpack(self.recordFormat, recordBytes))
         self.file.seek(orig, 0)
+
+    def readAllRecords(self) -> Union[None | tuple]:
+        recordBytes = self.file.read()
+        if recordBytes:
+            return tuple(struct.iter_unpack(self.recordFormat, recordBytes))
 
     def writeRecord(self, record: tuple) -> None:
         self.file.write(struct.pack(self.recordFormat, *record))
@@ -105,3 +114,14 @@ class StriderFileUtil:
 
     def getDatabaseFilepath(self) -> str:
         return os.path.join(self.databaseDirectory, "db.strdr")
+    
+    def safeOverwrite(self, old: str, new: str) -> None:
+        if os.path.exists(old):
+            os.remove(old)
+        shutil.copy2(new, old)
+        os.remove(new)
+    
+    def replaceArchive(self, archive: ArchiveFile, data: bool = False) -> None:
+        old = self.getArchiveFilePath(archive, data)
+        new = self.getArchiveFilePath(archive, data)+".new"
+        self.safeOverwrite(old, new)
