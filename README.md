@@ -2,6 +2,8 @@
 Strider is a simple timeseries database written in Python.
 # TODO
  - [ ] exceptions
+ - [ ] styling/typing consistency
+ - [ ] tests
  - [ ] integrity checks
  - [ ] self repair
  - [ ] set index inteval/rebuild
@@ -11,6 +13,7 @@ Strider is a simple timeseries database written in Python.
  - [ ] compression(?)
  - [ ] memory residency mode (all archives, current, none)
  - [ ] query return formats
+ - [ ] database creation options
 # Usage
 
     from strider.strider import DatabaseManager, DatabaseSession
