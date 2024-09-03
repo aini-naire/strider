@@ -1,5 +1,4 @@
-from typing import Union
-from typing_extensions import Self
+from typing import Union, Self
 from strider.io import StriderFileIO, StriderFileUtil, StriderArchiveIO
 from strider.exceptions import *
 

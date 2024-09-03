@@ -11,39 +11,6 @@ from strider.exceptions import *
 
 from strider.datatypes import Database, DatabaseArchive, ArchiveKey, ARCHIVE_RANGE
 
-
-class DatabaseManager:
-    """The DatabaseManager is responsible for creating, loading, checking and repariring databases"""
-
-    def load(self, baseDir: str, name: str) -> DatabaseSession:
-        """Loads Strider database
-        TODO integrity checks and errors"""
-        fileUtil = StriderFileUtil(baseDir, name)
-        try:
-            databaseFile = StriderFileIO(open(fileUtil.getDatabaseFilepath(), "rb"))
-        except FileNotFoundError:
-            raise DatabaseNotFound
-
-        database: Database = databaseFile.readStruct(Database)
-        database.archives = databaseFile.readStructSequence(DatabaseArchive, database.archiveCount)
-        database.keys = databaseFile.readStructSequence(ArchiveKey, database.keyCount)
-
-        return DatabaseSession(DatabaseHandler(database, fileUtil), fileUtil)
-
-    def new(self, baseDir: str, name: str, archiveRange: ARCHIVE_RANGE = ARCHIVE_RANGE.week) -> DatabaseSession:
-        """Creates new Strider database"""
-        fileUtil = StriderFileUtil(baseDir, name)
-        if os.path.isdir(fileUtil.databaseDirectory):
-            raise DatabaseExists
-        else:
-            database = Database("strdrdb", CURRENT_REVISION, name, 0, 0, 3600, archiveRange, [], [])
-
-            os.mkdir(fileUtil.databaseDirectory)
-            databaseHandler = DatabaseHandler(database, fileUtil)
-            databaseHandler.save()
-            return DatabaseSession(databaseHandler, fileUtil)
-
-
 class DatabaseSession:
     """"""
     databaseHandler: DatabaseHandler
@@ -116,3 +83,34 @@ class DatabaseSession:
             recordsQueue.append((int(time.timestamp()), *dataDict.values()))
 
         archive.writeRecords(recordsQueue)
+
+class DatabaseManager:
+    """The DatabaseManager is responsible for creating, loading, checking and repariring databases"""
+
+    def load(self, baseDir: str, name: str) -> DatabaseSession:
+        """Loads Strider database
+        TODO integrity checks and errors"""
+        fileUtil = StriderFileUtil(baseDir, name)
+        try:
+            databaseFile = StriderFileIO(open(fileUtil.getDatabaseFilepath(), "rb"))
+        except FileNotFoundError:
+            raise DatabaseNotFound
+
+        database: Database = databaseFile.readStruct(Database)
+        database.archives = databaseFile.readStructSequence(DatabaseArchive, database.archiveCount)
+        database.keys = databaseFile.readStructSequence(ArchiveKey, database.keyCount)
+
+        return DatabaseSession(DatabaseHandler(database, fileUtil), fileUtil)
+
+    def new(self, baseDir: str, name: str, archiveRange: ARCHIVE_RANGE = ARCHIVE_RANGE.week) -> DatabaseSession:
+        """Creates new Strider database"""
+        fileUtil = StriderFileUtil(baseDir, name)
+        if os.path.isdir(fileUtil.databaseDirectory):
+            raise DatabaseExists
+        else:
+            database = Database("strdrdb", CURRENT_REVISION, name, 0, 0, 3600, archiveRange, [], [])
+
+            os.mkdir(fileUtil.databaseDirectory)
+            databaseHandler = DatabaseHandler(database, fileUtil)
+            databaseHandler.save()
+            return DatabaseSession(databaseHandler, fileUtil)
