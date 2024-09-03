@@ -75,9 +75,17 @@ class StriderArchiveIO(StriderFileIO):
         recordBytes = self.file.read(self.recordSize)
         if recordBytes:
             return struct.unpack(self.recordFormat, recordBytes)
+    
+    def readRecords(self, count):
+        orig = self.file.tell()
+        recordBytes = self.file.read(self.recordSize*count)
+        if recordBytes:
+            return tuple(struct.iter_unpack(self.recordFormat, recordBytes))
+        self.file.seek(orig, 0)
         
     def writeRecord(self, record):
         self.file.write(struct.pack(self.recordFormat, *record))
+        
     
 class StriderFileUtil():
     def __init__(self, baseDir, databaseName) -> None:

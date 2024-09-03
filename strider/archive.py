@@ -82,16 +82,30 @@ class ArchiveHandler():
             if index:
                 archiveFile.file.seek(index.offset)
             #note that reading one at a time is way slower especially calling a wrapper function
-            while True:
-                record = archiveFile.readRecord()
-                if record is None:
-                    break
-
-                if record[0] >= start:
-                    if record[0] >= end:
+            #print(start, index, self.archive.indexInteval,)
+            lookAhead = True
+            read = True
+            while read:
+                if lookAhead:
+                    nextRecords = archiveFile.readRecords(50)
+                    if nextRecords is None:
+                        lookAhead=False
+                        continue
+                    for r in nextRecords:
+                        if r[0] >= start:
+                            if r[0] >= end:
+                                read=False
+                            else:
+                                records.append(r)
+                else:
+                    record = archiveFile.readRecord()
+                    if record is None:
                         break
 
-                    records.append(record)
+                    if record[0] >= start:
+                        if record[0] >= end:
+                            break
+                        records.append(record)
         return records
 
     def writeRecords(self, records):
