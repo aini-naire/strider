@@ -2,6 +2,7 @@ import math
 import os
 from datetime import datetime
 from typing import Union
+from operator import itemgetter
 
 CURRENT_REVISION = 0
 from strider.io import StriderFileIO, StriderFileUtil
@@ -64,12 +65,14 @@ class DatabaseSession:
     def add(self, time: datetime, data: dict) -> None:
         """Adds an entry to the database."""
         archive = self._getOrCreateArchive(time)
+        databaseKeys = [key.name for key in self.databaseHandler.getKeys()]
+        keysGetter = itemgetter(*databaseKeys)
 
-        archive.writeRecords([(int(time.timestamp()), *data.values())])
+        archive.writeRecords([(int(time.timestamp()), *keysGetter(data))])
 
     def addKey(self, keyName: str, keyType: str) -> None:
         """"Adds keyName to the database keys. This operation only affects current and future archives since the database does not have update operations (yet?)"""
-        archiveKey = ArchiveKey(keyName, ARCHIVE_KEY_TYPES(keyType))
+        archiveKey = ArchiveKey(keyName, 0, ARCHIVE_KEY_TYPES(keyType))
         self.databaseHandler.addKey(archiveKey)
         
         activeArchive = self._getActiveArchive()
@@ -83,11 +86,16 @@ class DatabaseSession:
         keys already must exist in the database
         TODO transform dictionary to record sequence
         TODO check if archive contains key"""
+        if len(ingest) == 0:
+            return None
+        
         time: datetime = next(iter(ingest))
         archive = self._getOrCreateArchive(time)
         archiveKey = self.databaseHandler.getArchiveKey(time)
         archivePeriod = self.databaseHandler.getArchivePeriod(time)
         recordsQueue = []
+        databaseKeys = [key.name for key in self.databaseHandler.getKeys()]
+        keysGetter = itemgetter(*databaseKeys)
         dataDict: dict
 
         for time, dataDict in ingest.items():
@@ -99,7 +107,8 @@ class DatabaseSession:
                 recordsQueue = []
                 archive = self._getOrCreateArchive(time)
                 archiveKey = self.databaseHandler.getArchiveKey(time)
-            recordsQueue.append((timestamp, *dataDict.values()))
+                archivePeriod = self.databaseHandler.getArchivePeriod(time)
+            recordsQueue.append((timestamp, *keysGetter(dataDict)))
 
         archive.writeRecords(recordsQueue)
 

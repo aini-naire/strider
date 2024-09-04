@@ -29,8 +29,9 @@ ARCHIVE_KEY_TYPES = Enum("KeyType", "? h i I f")  # bool, short, uint, int, floa
 
 @dataclass
 class ArchiveKey(StriderStruct):
-    format = (str, "H")
+    format = (str, "H", "H")
     name: str
+    downsampleFunc: int
     type: Enum = field(default_factory=ARCHIVE_KEY_TYPES)
 
 

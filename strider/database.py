@@ -49,6 +49,9 @@ class DatabaseHandler:
         self.database.keyCount = len(self.database.keys)
         self.save()
         return True
+    
+    def getKeys(self) -> list[ArchiveKey]:
+        return self.database.keys
 
     def hasArchive(self, archiveKey: int) -> bool:
         for archive in self.database.archives:
