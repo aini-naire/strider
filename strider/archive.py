@@ -7,7 +7,6 @@ from strider.exceptions import *
 from strider.strider import CURRENT_REVISION
 from strider.datatypes import Database, DatabaseArchive, ArchiveFile, ArchiveKey, ArchiveIndex, ARCHIVE_KEY_TYPES
 
-
 class ArchiveHandler:
     archive: ArchiveFile
     archiveRecordFormat: str
@@ -67,10 +66,15 @@ class ArchiveHandler:
     def getIndex(self, time: int) -> Union[None | ArchiveIndex]:
         index: ArchiveIndex
         last = None
+        if time < self.archive.minRange:
+            return None
+        
         for index in self.archive.indices:
             if index.timestamp > time:
                 return last
             last = index
+
+        return last
 
     def addIndex(self, index: ArchiveIndex) -> None:
         """TODO somthing"""
@@ -93,7 +97,7 @@ class ArchiveHandler:
         self.saveArchiveIndex()
 
 
-    def readRecords(self, start: int, end: int, key: Union[None | str] = None, raw: bool = False) -> list:
+    def readRecords(self, start: int, end: int, key: Union[None | str] = None, raw: bool =  False) -> list:
         """
         TODO smarter read strategy"""
         if key:
@@ -103,9 +107,11 @@ class ArchiveHandler:
                     keyI = i+1
         else:
             records = []
+            #recordObj = construct_slots(["time", *[key.name for key in self.archive.keys]])
             recordTuple = namedtuple('Record', 'timestamp '+' '.join([key.name for key in self.archive.keys]))
         
         index = self.getIndex(start)
+        #print(self.archive.index, start, index)
         with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "rb"), self.archiveRecordFormat) as archiveFile:
             if index:
                 archiveFile.file.seek(index.offset)
@@ -127,6 +133,7 @@ class ArchiveHandler:
                     if record[0] >= start:
                         if record[0] >= end:
                             read = False
+                            break
                         else:
                             if key:
                                 records[record[0]] = record[keyI]
@@ -144,12 +151,13 @@ class ArchiveHandler:
             lastRecord = archiveFile.readRecord()
             self.lastEntryTimestamp = archiveFile.readRecord()[0] if lastRecord else 0
 
-            for record in records:
+            for i, record in enumerate(records):
                 if record[0] < self.lastEntryTimestamp:
                     raise SequenceViolation()
 
-                if (record[0] - self.lastIndexTimestamp) > self.archive.indexInterval:
-                    index = ArchiveIndex(record[0], archiveFile.file.tell(), 1)
+                if (record[0] - self.lastIndexTimestamp) >= self.archive.indexInterval:
+                    #print(record[0], self.lastIndexTimestamp, record[0] - self.lastIndexTimestamp, self.archive.indexInterval)
+                    index = ArchiveIndex(record[0], archiveFile.file.tell() + (i * archiveFile.recordSize), 1)
                     self.addIndex(index)
                     self.lastIndexTimestamp = index.timestamp
 
