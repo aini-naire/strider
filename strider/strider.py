@@ -12,6 +12,7 @@ from strider.exceptions import *
 
 from strider.datatypes import Database, DatabaseArchive, ArchiveKey, ARCHIVE_RANGE, ARCHIVE_KEY_TYPES
 
+
 class DatabaseSession:
     """"""
     databaseHandler: DatabaseHandler
@@ -52,11 +53,15 @@ class DatabaseSession:
         startTimestamp = int(start.timestamp())
         endTimestamp = int(end.timestamp())
         archivePeriod = self.databaseHandler.getArchivePeriod(start)  # IDK if this will work for multiple month queries
-        archiveCount = math.ceil((endTimestamp - startTimestamp) / archivePeriod)
+        startArchive = self.databaseHandler.getArchiveKey(start)
+        endArchive = self.databaseHandler.getArchiveKey(end)
+        queryRange = (endTimestamp - startTimestamp)
+        archiveCount = int((endArchive+archivePeriod - startArchive) / archivePeriod)
 
         for archiveI in range(archiveCount):
             archive = self._getArchiveForDate(datetime.fromtimestamp(startTimestamp + (archiveI * archivePeriod)))
-            results += archive.readRecords(startTimestamp, endTimestamp, key, raw if not asArrays else True)
+            if archive:
+                results += archive.readRecords(startTimestamp, endTimestamp, key, raw if not asArrays else True)
 
         if asArrays:
             return {keyName: [record[recordIndex] for record in results] for recordIndex, keyName in enumerate([key.name for key in archive.archive.keys])}
