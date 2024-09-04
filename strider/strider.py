@@ -103,6 +103,20 @@ class DatabaseSession:
 
         archive.writeRecords(recordsQueue)
 
+class DatabaseMultiSession:
+    databases: dict = {}
+
+    def init_app(self, directory, app):
+        self.load(directory)
+        app.extensions["strider"] = self
+    
+    def load(self, directory: str) -> None:
+        for databaseDirectory in os.listdir(directory):
+            self.databases[databaseDirectory] = DatabaseManager.load(directory, databaseDirectory)
+
+    def getDatabaseSession(self, databaseName) -> DatabaseSession:
+        return self.databases[databaseName]
+
 class DatabaseManager:
     """The DatabaseManager is responsible for creating, loading, checking and repariring databases"""
 
