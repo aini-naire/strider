@@ -156,3 +156,5 @@ class DatabaseManager:
             databaseHandler = DatabaseHandler(database, fileUtil)
             databaseHandler.save()
             return DatabaseSession(databaseHandler, fileUtil)
+
+DatabaseManager = DatabaseManager()
