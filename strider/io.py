@@ -89,7 +89,7 @@ class StriderArchiveIO(StriderFileIO):
         orig = self.file.tell()
         recordBytes = self.file.read(self.recordSize * count)
         if recordBytes:
-            return struct.iter_unpack(self.recordFormat, recordBytes)
+            return tuple(struct.iter_unpack(self.recordFormat, recordBytes))
         self.file.seek(orig, 0)
 
     def readAllRecords(self) -> Union[None | tuple]:

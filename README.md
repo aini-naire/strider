@@ -3,7 +3,7 @@ Strider is a simple timeseries database written in Python.
 # TODO
  - [x] exceptions
  - [x] styling/typing consistency
- - [ ] tests
+ - [x] tests (only external interface for now)
  - [ ] database integrity checks
  - [ ] database self repair
  - [ ] set archive index inteval/rebuild
@@ -20,7 +20,7 @@ Strider is a simple timeseries database written in Python.
     from datetime import datetime
     
     # Create new Database
-    databaseSession:DatabaseSession  =  DatabaseManager().new("test", "test")
+    databaseSession:DatabaseSession  =  DatabaseManager.new("test", "test")
     # Register a new key
     databaseSession.databaseHandler.addKey("cpu_load", 5) #from 1 to 5, types are bool, short, uint, int, float
     # Add a record
