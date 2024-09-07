@@ -69,11 +69,26 @@ class DatabaseSession:
 
     def add(self, time: datetime, data: dict) -> None:
         """Adds an entry to the database."""
+        if len(data) == 0:
+            raise ValueError("Data is empty")
+        
         archive = self._getOrCreateArchive(time)
         databaseKeys = [key.name for key in self.databaseHandler.getKeys()]
         keysGetter = itemgetter(*databaseKeys)
+        record = [int(time.timestamp())]
+        try:
+            values = keysGetter(data)
+            if values != None:
+                if isinstance(values, tuple):
+                    record.extend(values)
+                else:
+                    record.append(values)
+            else:
+                raise ValueError("Empty Data")
+        except KeyError:
+            record.extend([data.get(key, 0) for key in databaseKeys])
 
-        archive.writeRecords([(int(time.timestamp()), *keysGetter(data))])
+        archive.writeRecords([record])
 
     def addKey(self, keyName: str, keyType: str) -> None:
         """"Adds keyName to the database keys. This operation only affects current and future archives since the database does not have update operations (yet?)"""
