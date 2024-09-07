@@ -28,7 +28,7 @@ class ArchiveHandler:
         try:
             self.archive = self._readArchiveIndex(StriderFileIO(open(self.fileUtil.getArchiveFilePath(archive), "rb")))
             self._buildDataFormat()
-            self.lastIndexTimestamp = self.archive.indices[-1].timestamp
+            self.lastIndexTimestamp = self.archive.indices[-1].timestamp if self.archive.indexCount != 0 else 0
         except FileNotFoundError:
             raise ArchiveNotFound()
 
@@ -147,9 +147,12 @@ class ArchiveHandler:
 
     def writeRecords(self, records: list) -> None:
         with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "a+b"), self.archiveRecordFormat) as archiveFile:
-            archiveFile.file.seek(archiveFile.recordSize, 2)
-            lastRecord = archiveFile.readRecord()
-            self.lastEntryTimestamp = archiveFile.readRecord()[0] if lastRecord else 0
+            if archiveFile.file.tell() == 0:
+                self.lastEntryTimestamp = self.archive.minRange
+            else:
+                archiveFile.file.seek(-archiveFile.recordSize, 1)
+                lastRecord = archiveFile.readRecord()
+                self.lastEntryTimestamp = lastRecord[0]
 
             for i, record in enumerate(records):
                 if record[0] < self.lastEntryTimestamp:
@@ -161,6 +164,7 @@ class ArchiveHandler:
                     self.addIndex(index)
                     self.lastIndexTimestamp = index.timestamp
 
+            self.lastEntryTimestamp = record[0]
             archiveFile.writeRecords(records)
 
             self.saveArchiveIndex()
