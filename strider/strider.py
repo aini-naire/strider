@@ -38,10 +38,11 @@ class DatabaseSession:
         return None
 
     def _getOrCreateArchive(self, date: datetime) -> ArchiveHandler:
-        archive = self._getArchiveForDate(date)
-        if archive is None:
-            archive = self.databaseHandler.createArchive(date)
-        return archive
+        archiveHandler = self._getArchiveForDate(date)
+        if archiveHandler is None:
+            archiveHandler = self.databaseHandler.createArchive(date)
+            self.loadedArchives[archiveHandler.archive.minRange] = archiveHandler
+        return archiveHandler
     
     def _getActiveArchive(self) -> Union[None | ArchiveHandler]:
         date = datetime.now()
