@@ -76,17 +76,7 @@ class DatabaseSession:
         databaseKeys = [key.name for key in self.databaseHandler.getKeys()]
         keysGetter = itemgetter(*databaseKeys)
         record = [int(time.timestamp())]
-        try:
-            values = keysGetter(data)
-            if values != None:
-                if isinstance(values, tuple):
-                    record.extend(values)
-                else:
-                    record.append(values)
-            else:
-                raise ValueError("Empty Data")
-        except KeyError:
-            record.extend([data.get(key, 0) for key in databaseKeys])
+        record.extend([data.get(key, 0) for key in databaseKeys])
 
         archive.writeRecords([record])
 
@@ -107,7 +97,7 @@ class DatabaseSession:
         TODO transform dictionary to record sequence
         TODO check if archive contains key"""
         if len(ingest) == 0:
-            return None
+            raise ValueError("Empty Data")
         
         time: datetime = next(iter(ingest))
         archive = self._getOrCreateArchive(time)
@@ -128,7 +118,9 @@ class DatabaseSession:
                 archive = self._getOrCreateArchive(time)
                 archiveKey = self.databaseHandler.getArchiveKey(time)
                 archivePeriod = self.databaseHandler.getArchivePeriod(time)
-            recordsQueue.append((timestamp, *keysGetter(dataDict)))
+            record = [timestamp]
+            record.extend([dataDict.get(key, 0) for key in databaseKeys])
+            recordsQueue.append(record)
 
         archive.writeRecords(recordsQueue)
 
