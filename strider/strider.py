@@ -2,7 +2,7 @@ import math
 import os
 from datetime import datetime
 from typing import Union
-from operator import itemgetter
+import struct
 
 CURRENT_REVISION = 0
 from strider.io import StriderFileIO, StriderFileUtil
@@ -10,7 +10,7 @@ from strider.database import DatabaseHandler
 from strider.archive import ArchiveHandler
 from strider.exceptions import *
 
-from strider.datatypes import Database, DatabaseArchive, ArchiveKey, ARCHIVE_RANGE, ARCHIVE_KEY_TYPES
+from strider.datatypes import Database, DatabaseArchive, ArchiveFile, ArchiveKey, ARCHIVE_RANGE, ARCHIVE_KEY_TYPES
 
 
 class DatabaseSession:
@@ -150,9 +150,16 @@ class DatabaseManager:
         except FileNotFoundError:
             raise DatabaseNotFound()
 
-        database: Database = databaseFile.readStruct(Database)
-        database.archives = databaseFile.readStructSequence(DatabaseArchive, database.archiveCount)
-        database.keys = databaseFile.readStructSequence(ArchiveKey, database.keyCount)
+        try:
+            database: Database = databaseFile.readStruct(Database)
+            database.archives = databaseFile.readStructSequence(DatabaseArchive, database.archiveCount)
+            database.keys = databaseFile.readStructSequence(ArchiveKey, database.keyCount)
+        except struct.error:
+            if os.path.isfile(fileUtil.getDatabaseFilepath()+".old"):
+                fileUtil.safeOverwrite(fileUtil.getDatabaseFilepath(), fileUtil.getDatabaseFilepath()+".old")
+                return self.load(baseDir, name)
+            else:
+                database = self.rebuildDatabase(fileUtil)
 
         return DatabaseSession(DatabaseHandler(database, fileUtil), fileUtil)
 
@@ -168,5 +175,37 @@ class DatabaseManager:
             databaseHandler = DatabaseHandler(database, fileUtil)
             databaseHandler.save()
             return DatabaseSession(databaseHandler, fileUtil)
+        
+    def rebuildDatabase(self, fileUtil: StriderFileUtil):
+        archives:list[ArchiveFile] = []
+        lastArchive = None
+        # Read all archives
+        for file in os.listdir(fileUtil.databaseDirectory):
+            if file.startswith("achv") and file.endswith("strdridx"):
+                archive:ArchiveFile = ArchiveHandler._readArchiveIndex(None, StriderFileIO(open(os.path.join(fileUtil.databaseDirectory,file), "rb")))
+                if lastArchive is None:
+                    lastArchive = archive
+                if max(lastArchive.minRange, archive.minRange) == archive.minRange:
+                    lastArchive = archive
+        # Determine archive range
+        archiveRange = (archive.minRange-archive.maxRange)
+        match archiveRange:
+            case 86400:
+                archiveRange = ARCHIVE_RANGE.day
+            case 604800:
+                archiveRange = ARCHIVE_RANGE.week
+            case _:
+                archiveRange = ARCHIVE_RANGE.month
+
+        database = Database("strdrdb", CURRENT_REVISION, "rebuilt",
+                            len(archives),
+                            len(lastArchive.keys),
+                            lastArchive.indexInterval,
+                            archiveRange,
+                            [DatabaseArchive(archive.minRange, archive.maxRange, archive.index, archive.resolution) for archive in archives],
+                            lastArchive.keys)
+        databaseHandler = DatabaseHandler(database, fileUtil)
+        databaseHandler.save()
+        return database
 
 DatabaseManager = DatabaseManager()

@@ -5,7 +5,8 @@ Strider is a simple timeseries database written in Python.
  - [x] styling/typing consistency
  - [x] tests (only external interface for now)
  - [ ] database integrity checks
- - [ ] database self repair
+ - [x] database self repair
+ - [ ] archive self repair
  - [ ] set archive index inteval/rebuild
  - [x] add database key with an existing archive/full rebuild (full rebuild only necessary if backfilling past records is necessary)
  - [ ] strides querying
@@ -20,7 +21,7 @@ Strider is a simple timeseries database written in Python.
     from datetime import datetime
     
     # Create new Database
-    databaseSession:DatabaseSession  =  DatabaseManager.new("test", "test")
+    databaseSession:DatabaseSession  =  DatabaseManager.new("data/test", "test")
     # Register a new key
     databaseSession.databaseHandler.addKey("cpu_load", 5) #from 1 to 5, types are bool, short, uint, int, float
     # Add a record

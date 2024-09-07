@@ -34,8 +34,8 @@ class DatabaseHandler:
         return timestamp - (timestamp % self.getArchivePeriod(date))
 
     def save(self) -> None:
-        """Saves database
-        TODO rename current file to .old"""
+        """Saves database"""
+        self.fileUtil.safeOverwrite(self.fileUtil.getDatabaseFilepath()+".old", self.fileUtil.getDatabaseFilepath())
         with StriderFileIO(open(self.fileUtil.getDatabaseFilepath(), "wb")) as databaseFile:
             databaseFile.writeStruct(self.database)
 

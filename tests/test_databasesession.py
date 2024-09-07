@@ -92,7 +92,7 @@ def testBulkAddInvalidData(database: strider.DatabaseSession):
 
     
 
-    with pytest.raises(struct.error):
+    with pytest.raises(AttributeError):
         data = {"date": {"testKey": 5.0},
                 datetime(2024, 5, 11, 15, 30, 30): {"testKey": 5.0},
                 datetime(2024, 5, 12, 15, 30, 30): {"testKey": 5.0},
