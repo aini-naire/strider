@@ -49,14 +49,14 @@ class DatabaseSession:
 
     def query(self, start: datetime, end: datetime, key: Union[None | str] = None, raw: bool = False, asArrays:bool = False) -> Union[list | dict]:
         """Queries from start to end date. If `key` is set, returns a single key in `{timestamp:keyvalue}` format. If `raw` is set, returns records as tuples"""
-        results = []
         startTimestamp = int(start.timestamp())
         endTimestamp = int(end.timestamp())
-        archivePeriod = self.databaseHandler.getArchivePeriod(start)  # IDK if this will work for multiple month queries
+        archivePeriod = self.databaseHandler.getArchivePeriod(start)
         startArchive = self.databaseHandler.getArchiveKey(start)
         endArchive = self.databaseHandler.getArchiveKey(end)
-        queryRange = (endTimestamp - startTimestamp)
         archiveCount = int((endArchive+archivePeriod - startArchive) / archivePeriod)
+        
+        results = []
 
         for archiveI in range(archiveCount):
             archive = self._getArchiveForDate(datetime.fromtimestamp(startTimestamp + (archiveI * archivePeriod)))
@@ -65,7 +65,8 @@ class DatabaseSession:
 
         if asArrays:
             return {keyName: [record[recordIndex] for record in results] for recordIndex, keyName in enumerate([key.name for key in archive.archive.keys])}
-        return results
+        else:
+            return results
 
     def add(self, time: datetime, data: dict) -> None:
         """Adds an entry to the database."""
@@ -74,7 +75,6 @@ class DatabaseSession:
         
         archive = self._getOrCreateArchive(time)
         databaseKeys = [key.name for key in self.databaseHandler.getKeys()]
-        keysGetter = itemgetter(*databaseKeys)
         record = [int(time.timestamp())]
         record.extend([data.get(key, 0) for key in databaseKeys])
 
@@ -103,14 +103,13 @@ class DatabaseSession:
         archive = self._getOrCreateArchive(time)
         archiveKey = self.databaseHandler.getArchiveKey(time)
         archivePeriod = self.databaseHandler.getArchivePeriod(time)
-        recordsQueue = []
         databaseKeys = [key.name for key in self.databaseHandler.getKeys()]
-        keysGetter = itemgetter(*databaseKeys)
         dataDict: dict
+        
+        recordsQueue = []
 
         for time, dataDict in ingest.items():
             timestamp = int(time.timestamp())
-            #iterationArchiveKey = self.databaseHandler.getArchiveKey(time)
 
             if (timestamp > archiveKey+archivePeriod):
                 archive.writeRecords(recordsQueue)
@@ -118,6 +117,7 @@ class DatabaseSession:
                 archive = self._getOrCreateArchive(time)
                 archiveKey = self.databaseHandler.getArchiveKey(time)
                 archivePeriod = self.databaseHandler.getArchivePeriod(time)
+
             record = [timestamp]
             record.extend([dataDict.get(key, 0) for key in databaseKeys])
             recordsQueue.append(record)
