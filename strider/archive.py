@@ -81,6 +81,25 @@ class ArchiveHandler:
         self.archive.indices.append(index)
         self.archive.indexCount = len(self.archive.indices)
 
+    def setIndexInteval(self, inteval: int) -> None:
+        indices = []
+        last = self.archive.minRange
+        records = None
+        with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "rb"), self.archiveRecordFormat) as archiveFile:
+            records = archiveFile.readAllRecords()
+        
+        if records:
+            for i, record in enumerate(records):
+                if (record[0] - last) >= inteval:
+                    indices.append(ArchiveIndex(record[0], (i * archiveFile.recordSize), 1))
+                    last = record[0]
+
+            self.archive.indexInterval = inteval
+            self.archive.indexCount = len(indices)
+            self.archive.indices = indices
+            self.saveArchiveIndex()
+
+
     def addKey(self, archiveKey: ArchiveKey) -> None:
         with StriderArchiveIO(open(self.fileUtil.getArchiveFilePath(self.archive, True), "rb"), self.archiveRecordFormat) as archiveFile:
             records = archiveFile.readAllRecords()

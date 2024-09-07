@@ -7,7 +7,7 @@ Strider is a simple timeseries database written in Python.
  - [ ] database integrity checks
  - [x] database self repair
  - [ ] archive self repair
- - [ ] set archive index inteval/rebuild
+ - [x] set archive index inteval/rebuild
  - [x] add database key with an existing archive/full rebuild (full rebuild only necessary if backfilling past records is necessary)
  - [ ] strides querying
  - [ ] downsampling

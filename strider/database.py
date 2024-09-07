@@ -52,6 +52,11 @@ class DatabaseHandler:
     
     def getKeys(self) -> list[ArchiveKey]:
         return self.database.keys
+    
+    def setIndexInteval(self, inteval) -> None:
+        self.database.indexInterval = inteval
+        self.save()
+        return True
 
     def hasArchive(self, archiveKey: int) -> bool:
         for archive in self.database.archives:
@@ -72,7 +77,7 @@ class DatabaseHandler:
         archiveHandler = ArchiveHandler(self.fileUtil).load(databaseArchive)
         return archiveHandler
 
-    def loadArchives(self) -> dict:
+    def loadArchives(self) -> dict[int, ArchiveHandler]:
         archives = {}
         for archive in self.database.archives:
             archiveHandler = ArchiveHandler(self.fileUtil).load(archive)

@@ -17,7 +17,7 @@ class DatabaseSession:
     """"""
     databaseHandler: DatabaseHandler
     fileUtil: StriderFileUtil
-    loadedArchives: dict = {}
+    loadedArchives: dict[int, ArchiveHandler] = {}
 
     def __init__(self, handler: DatabaseHandler, fileUtil: StriderFileUtil) -> None:
         self.databaseHandler = handler
@@ -89,6 +89,20 @@ class DatabaseSession:
         activeArchive = self._getActiveArchive()
         if activeArchive:
             activeArchive.addKey(archiveKey)
+
+    def setIndexInteval(self, inteval: int, full: bool = False) -> None:
+        """"Changes database index inteval if ´full´ is False, only re-indexes the current archive"""
+        inteval = int(inteval)
+        
+        if full:
+            for archive in self.loadedArchives.values():
+                archive.setIndexInteval(inteval)
+        else:
+            activeArchive = self._getActiveArchive()
+            if activeArchive:
+                activeArchive.setIndexInteval(inteval)
+        self.databaseHandler.setIndexInteval(inteval)
+        return True
 
 
     def bulkAdd(self, ingest: dict) -> None:
@@ -188,6 +202,7 @@ class DatabaseManager:
                     lastArchive = archive
                 if max(lastArchive.minRange, archive.minRange) == archive.minRange:
                     lastArchive = archive
+
         # Determine archive range
         archiveRange = (archive.minRange-archive.maxRange)
         match archiveRange:
