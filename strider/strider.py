@@ -140,6 +140,8 @@ class DatabaseSession:
 
 class DatabaseMultiSession:
     databases: dict = {}
+    initialized: bool = False
+    directory: str
 
     def init_app(self, directory, app):
         self.load(directory)
@@ -149,7 +151,17 @@ class DatabaseMultiSession:
         for databaseDirectory in os.listdir(directory):
             self.databases[databaseDirectory] = DatabaseManager.load(directory, databaseDirectory)
 
-    def getDatabaseSession(self, databaseName) -> DatabaseSession:
+        self.initialized = True
+        self.directory = directory
+
+    def new(self, name: str) -> DatabaseSession:
+        if self.initialized and self.directory:
+            database = DatabaseManager.new(self.directory, name)
+            self.databases[name] = database
+            return database
+
+
+    def getDatabaseSession(self, databaseName: str) -> DatabaseSession:
         return self.databases[databaseName]
 
 class DatabaseManager:
