@@ -109,10 +109,9 @@ class DatabaseSession:
         """Add data to Database in bulk. 
         This function ingests data as a dictionary `datetime:{key:value}`
         keys already must exist in the database
-        TODO transform dictionary to record sequence
-        TODO check if archive contains key"""
+        TODO type safety"""
         if len(ingest) == 0:
-            raise ValueError("Empty Data")
+            return None
         
         time: datetime = next(iter(ingest))
         archive = self._getOrCreateArchive(time)
