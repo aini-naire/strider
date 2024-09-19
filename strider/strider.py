@@ -64,10 +64,11 @@ class DatabaseSession:
             if archive:
                 results += archive.readRecords(startTimestamp, endTimestamp, key, raw if not asArrays else True)
 
-        if asArrays:
-            return {keyName: [record[recordIndex] for record in results] for recordIndex, keyName in enumerate([key.name for key in archive.archive.keys])}
-        else:
-            return results
+        if asArrays and len(results):
+            keys = ["time", *[key.name for key in (archive.archive.keys if archive else self.databaseHandler.getKeys())]]
+            return {keyName: [record[recordIndex] for record in results] for recordIndex, keyName in enumerate(keys)}
+        
+        return results
 
     def add(self, time: datetime, data: dict) -> None:
         """Adds an entry to the database."""
