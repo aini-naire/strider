@@ -163,7 +163,10 @@ class DatabaseMultiSession:
 
 
     def getDatabaseSession(self, databaseName: str) -> DatabaseSession:
-        return self.databases[databaseName]
+        try:
+            return self.databases[databaseName]
+        except KeyError:
+            raise DatabaseNotFound()
 
 class DatabaseManager:
     """The DatabaseManager is responsible for creating, loading, checking and repariring databases"""
