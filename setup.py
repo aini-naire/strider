@@ -1,5 +1,5 @@
 try:
-    from setuptools import setup
+    from setuptools import setup, find_packages
 except ImportError:
     from distutils.core import setup
 
@@ -9,5 +9,5 @@ setup(name='strider',
       description='Simple Python time-series DB',
       author='Emily Cavalcante',
       license='MIT',
-      py_modules=['strider'],
+      packages=find_packages(include=['strider', 'strider.*']),
       )
