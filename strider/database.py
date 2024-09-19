@@ -35,7 +35,10 @@ class DatabaseHandler:
 
     def save(self) -> None:
         """Saves database"""
-        self.fileUtil.safeOverwrite(self.fileUtil.getDatabaseFilepath()+".old", self.fileUtil.getDatabaseFilepath())
+        try:
+            self.fileUtil.safeOverwrite(self.fileUtil.getDatabaseFilepath()+".old", self.fileUtil.getDatabaseFilepath())
+        except FileNotFoundError:
+            pass
         with StriderFileIO(open(self.fileUtil.getDatabaseFilepath(), "wb")) as databaseFile:
             databaseFile.writeStruct(self.database)
 
